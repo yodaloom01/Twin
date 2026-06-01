@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Twin — Find your people</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Mono:ital,wght@0,300;0,400;1,300&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;1,9..40,300&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root {
+  --bg: #f2f2f4;
+  --bg2: #ffffff;
+  --bg3: #f7f7f9;
+  --bg4: #ebebed;
+  --border: #e0e0e4;
+  --border-hover: #b8b8c8;
+  --text: #111114;
+  --text-2: #52525c;
+  --text-3: #9898a6;
+  --silver: #6b6b80;
+  --silver-light: #a0a0b4;
+  --silver-dim: #f0f0f4;
+  --silver-mid: #d4d4de;
+  --chrome: #1a1a22;
+  --chrome-mid: #3a3a48;
+  --accent: #5c5c78;
+  --teal: #4a7a78;
+  --teal-dim: #e8f2f1;
+  --red: #c0392b;
+  --red-dim: #fde8e8;
+  --green: #2d7a4a;
+  --green-dim: #e0f4e8;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md: 0 4px 16px rgba(0,0,0,0.10), 0 2px 4px rgba(0,0,0,0.06);
+  --shadow-lg: 0 12px 40px rgba(0,0,0,0.14), 0 4px 12px rgba(0,0,0,0.08);
+  --radius: 14px;
+  --radius-sm: 8px;
+  --radius-pill: 100px;
+  --chrome-gradient: linear-gradient(135deg, #2a2a35 0%, #1a1a22 40%, #2e2e3e 70%, #1a1a22 100%);
+  --silver-gradient: linear-gradient(105deg, #c8c8d8, #f0f0f8, #a8a8be, #e8e8f4, #b8b8cc);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* ── SETUP BANNER ── */
+#setup-banner {
+  background: #fffbeb;
+  border-bottom: 1px solid #fde68a;
+  padding: 10px 2rem;
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  color: #92400e;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+#setup-banner a { color: #b45309; text-decoration: underline; }
+#setup-banner code {
+  background: #fef3c7;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 11px;
+  color: #92400e;
+}
+
+/* ── LANDING ── */
+#landing {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  position: relative;
+  background: linear-gradient(160deg, #ffffff 0%, #f4f4f8 40%, #e8e8f0 70%, #d8d8e8 100%);
+  overflow: hidden;
+}
+.orb { position: absolute; border-radius: 50%; filter: blur(70px); pointer-events: none; }
+.orb-1 { width: 500px; height: 500px; background: rgba(160,160,190,0.18); top: -100px; right: -80px; }
+.orb-2 { width: 400px; height: 400px; background: rgba(180,180,210,0.12); bottom: -80px; left: -60px; }
+.orb-3 { width: 300px; height: 300px; background: rgba(200,200,220,0.16); top: 40%; left: 60%; }
+
+.landing-inner {
+  text-align: center;
+  max-width: 640px;
+  position: relative;
+  z-index: 2;
+  animation: fadeUp 0.8s ease both;
+}
+@keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.8);
+  border: 1px solid var(--silver-mid);
+  color: var(--silver);
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 5px 14px;
+  border-radius: var(--radius-pill);
+  margin-bottom: 1.75rem;
+  box-shadow: var(--shadow-sm);
+}
+.eyebrow-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--silver); animation: blink 2s ease infinite; }
+
+h1 {
+  font-family: 'Syne', sans-serif;
+  font-size: clamp(48px, 9vw, 82px);
+  font-weight: 800;
+  line-height: 0.95;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  margin-bottom: 1.5rem;
+}
+h1 span {
+  background: var(--silver-gradient);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: silver-flow 4s ease-in-out infinite;
+  display: block;
+}
+@keyframes silver-flow {
+  0%,100% { background-position: 0% center; }
+  50%      { background-position: 100% center; }
+}
+
+.tagline {
+  font-size: 18px;
+  color: var(--text-2);
+  max-width: 460px;
+  margin: 0 auto 2.5rem;
+  line-height: 1.7;
+  font-weight: 300;
+}
+
+/* ── SPARKLE SYSTEM ── */
+@keyframes sparkle-float {
+  0%   { transform: translateY(0px) rotate(0deg) scale(1);   opacity: 0; }
+  20%  { opacity: 1; }
+  80%  { opacity: 0.8; }
+  100% { transform: translateY(-28px) rotate(25deg) scale(0); opacity: 0; }
+}
+@keyframes sparkle-twinkle {
+  0%,100% { opacity: 0; transform: scale(0.3) rotate(0deg); }
+  50%      { opacity: 1; transform: scale(1) rotate(20deg); }
+}
+@keyframes shimmer-sweep {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+@keyframes logo-glow {
+  0%,100% { filter: drop-shadow(0 0 6px rgba(150,150,180,0.4)); }
+  50%      { filter: drop-shadow(0 0 14px rgba(180,180,210,0.7)); }
+}
+@keyframes ambient-drift {
+  0%   { transform: translate(0,0) scale(0) rotate(0deg); opacity: 0; }
+  15%  { opacity: 1; }
+  85%  { opacity: 0.7; }
+  100% { transform: translate(var(--tx), var(--ty)) scale(0) rotate(var(--tr)); opacity: 0; }
+}
+
+.sparkle-dot {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 50%;
+  animation: sparkle-twinkle var(--dur, 1.8s) ease-in-out var(--delay, 0s) infinite;
+}
+.sparkle-star {
+  position: absolute;
+  pointer-events: none;
+  font-style: normal;
+  line-height: 1;
+  animation: sparkle-float var(--dur, 2s) ease-out var(--delay, 0s) infinite;
+  user-select: none;
+}
+.sparkle-burst {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  font-style: normal;
+  line-height: 1;
+  animation: ambient-drift 0.9s ease-out forwards;
+}
+
+/* ── BUTTONS ── */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--chrome-gradient);
+  color: #f0f0f8;
+  font-family: 'DM Sans', sans-serif;
+  font-weight: 600;
+  font-size: 15px;
+  padding: 13px 26px;
+  border-radius: var(--radius-pill);
+  border: 1px solid rgba(255,255,255,0.12);
+  cursor: pointer;
+  transition: all 0.18s;
+  text-decoration: none;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.12);
+}
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(105deg, transparent 25%, rgba(255,255,255,0.18) 50%, transparent 75%);
+  background-size: 200% 100%;
+  background-position: -200% center;
+  pointer-events: none;
+}
+.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 24px rgba(0,0,0,0.30), inset 0 1px 0 rgba(255,255,255,0.18); }
+.btn-primary:hover::before { animation: shimmer-sweep 0.6s ease forwards; }
+.btn-primary:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+
+.btn-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,0.9);
+  color: var(--text-2);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 400;
+  padding: 13px 24px;
+  border-radius: var(--radius-pill);
+  border: 1.5px solid var(--border);
+  cursor: pointer;
+  transition: all 0.18s;
+  margin-left: 10px;
+  box-shadow: var(--shadow-sm);
+  position: relative;
+  overflow: hidden;
+}
+.btn-ghost::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(105deg, transparent 30%, rgba(120,120,160,0.08) 50%, transparent 70%);
+  background-size: 200% 100%;
+  background-position: -200% center;
+  pointer-events: none;
+}
+.btn-ghost:hover { border-color: var(--border-hover); color: var(--text); background: #fff; }
+.btn-ghost:hover::before { animation: shimmer-sweep 0.6s ease forwards; }
+
+.btn-google {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  background: #fff;
+  border: 1.5px solid var(--border);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  font-weight: 500;
+  padding: 13px 24px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: all 0.18s;
+  width: 100%;
+  justify-content: center;
+  box-shadow: var(--shadow-sm);
+}
+.btn-google:hover { border-color: var(--border-hover); box-shadow: var(--shadow-md); }
+.btn-google svg { flex-shrink: 0; }
+
+.how-it-works {
+  margin-top: 3.5rem;
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.how-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  text-align: left;
+  max-width: 150px;
+}
+.step-num {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--silver);
+  background: var(--silver-dim);
+  border-radius: 4px;
+  padding: 2px 7px;
+  white-space: nowrap;
+  margin-top: 2px;
+  flex-shrink: 0;
+  font-weight: 600;
+}
+.step-text { font-size: 13px; color: var(--text-2); line-height: 1.5; }
+
+/* ── MODALS ── */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(15,27,45,0.45);
+  backdrop-filter: blur(6px);
+  z-index: 500;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+.modal-overlay.open { display: flex; animation: fadeUp 0.25s ease both; }
+.modal {
+  background: #fff;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2rem;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: var(--shadow-lg);
+}
+.modal-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 0.4rem;
+}
+.modal-sub { font-size: 14px; color: var(--text-2); margin-bottom: 1.5rem; line-height: 1.6; }
+.modal-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 1.25rem 0;
+  color: var(--text-3);
+  font-size: 12px;
+}
+.modal-divider::before, .modal-divider::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+/* ── APP SHELL ── */
+#app { display: none; }
+.app-layout { min-height: 100vh; display: grid; grid-template-rows: 60px 1fr; background: var(--bg); }
+
+.topbar {
+  background: rgba(255,255,255,0.94);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  padding: 0 2rem;
+  gap: 1rem;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 0 var(--border);
+}
+
+.logo {
+  font-family: 'Syne', sans-serif;
+  font-weight: 800;
+  font-size: 19px;
+  background: var(--silver-gradient);
+  background-size: 300% 100%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  animation: silver-flow 3s ease-in-out infinite;
+  flex: 1;
+  letter-spacing: -0.02em;
+  position: relative;
+  cursor: default;
+}
+.topbar-user { display: flex; align-items: center; gap: 10px; }
+.avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: var(--silver-dim);
+  border: 2px solid var(--silver-mid);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; color: var(--silver);
+  font-family: 'Syne', sans-serif; font-weight: 700; overflow: hidden;
+}
+.avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+.handle-label { font-family: 'DM Mono', monospace; font-size: 12px; color: var(--text-2); }
+.btn-signout {
+  background: none; border: 1.5px solid var(--border); color: var(--text-3);
+  font-size: 12px; padding: 5px 12px; border-radius: var(--radius-pill);
+  cursor: pointer; font-family: 'DM Sans', sans-serif; transition: all 0.15s;
+}
+.btn-signout:hover { color: var(--text-2); border-color: var(--border-hover); }
+
+.step-indicator { display: flex; align-items: center; gap: 5px; }
+.step-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--border); transition: all 0.3s; }
+.step-dot.done { background: var(--teal); }
+.step-dot.active { background: var(--chrome); width: 20px; border-radius: 4px; box-shadow: 0 0 0 3px rgba(26,26,34,0.12); }
+
+.app-content {
+  padding: 2.5rem 1.5rem;
+  max-width: 660px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ── CARD WRAPPER ── */
+.form-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 1rem;
+}
+
+/* ── SECTIONS ── */
+.section { display: none; }
+.section.active { display: block; animation: fadeUp 0.4s ease both; }
+
+.section-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 26px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 0.35rem;
+  letter-spacing: -0.02em;
+}
+.section-sub { color: var(--text-2); font-size: 15px; margin-bottom: 1.75rem; font-weight: 300; line-height: 1.65; }
+
+/* ── FORM ── */
+.field { margin-bottom: 1.1rem; }
+.field label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-2);
+  margin-bottom: 7px;
+  letter-spacing: 0;
+}
+.field input, .field textarea {
+  width: 100%;
+  background: var(--bg3);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 15px;
+  padding: 11px 15px;
+  outline: none;
+  transition: border-color 0.18s, box-shadow 0.18s;
+  resize: vertical;
+}
+.field input:focus, .field textarea:focus {
+  border-color: var(--silver);
+  box-shadow: 0 0 0 3px rgba(107,107,128,0.10);
+  background: #fff;
+}
+.field textarea { min-height: 100px; line-height: 1.6; }
+::placeholder { color: var(--text-3); }
+.field-note { font-size: 12px; color: var(--text-3); margin-top: 5px; }
+.input-status {
+  font-size: 12px;
+  margin-top: 6px;
+  padding: 5px 10px;
+  border-radius: var(--radius-sm);
+  display: none;
+  font-weight: 500;
+}
+.input-status.ok { display: block; color: var(--green); background: var(--green-dim); }
+.input-status.err { display: block; color: var(--red); background: var(--red-dim); }
+
+/* ── TAGS ── */
+.tag-section { margin-bottom: 1.5rem; }
+.tag-section-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-3);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  margin-bottom: 10px;
+}
+.tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.tag {
+  background: var(--bg3);
+  border: 1.5px solid var(--border);
+  color: var(--text-2);
+  font-size: 13px;
+  font-weight: 400;
+  padding: 6px 15px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+.tag:hover { border-color: var(--silver-mid); color: var(--chrome); background: var(--silver-dim); }
+.tag.selected { background: var(--chrome); border-color: var(--chrome-mid); color: #f0f0f8; font-weight: 500; }
+
+/* ── CUSTOM Q ── */
+.custom-input-row { display: flex; gap: 8px; }
+.custom-input-row input { flex: 1; }
+.custom-input-row button {
+  background: var(--chrome-gradient);
+  border: 1px solid rgba(255,255,255,0.1);
+  color: #f0f0f8;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 0 18px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: 'DM Sans', sans-serif;
+  transition: all 0.15s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+}
+.custom-input-row button:hover { opacity: 0.85; }
+.custom-list { margin-top: 10px; display: flex; flex-direction: column; gap: 6px; }
+.custom-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--silver-dim);
+  border: 1.5px solid var(--silver-mid);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  font-size: 14px;
+  color: var(--text);
+  animation: fadeUp 0.25s ease both;
+}
+.custom-item .remove {
+  background: none; border: none; color: var(--text-3);
+  cursor: pointer; font-size: 18px; padding: 0 0 0 12px;
+  transition: color 0.15s; line-height: 1;
+}
+.custom-item .remove:hover { color: var(--red); }
+.suggestions-label { font-size: 12px; font-weight: 500; color: var(--text-3); margin: 14px 0 9px; }
+
+.nav-row {
+  display: flex; gap: 10px; margin-top: 2rem;
+  padding-top: 1.5rem; border-top: 1px solid var(--border);
+}
+.divider { height: 1px; background: var(--border); margin: 1.5rem 0; }
+
+/* ── VOID SCREEN ── */
+.void-screen {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; min-height: 65vh; text-align: center; padding: 2rem;
+}
+.void-orb-container { position: relative; width: 130px; height: 130px; margin: 0 auto 2rem; }
+.void-orb-core {
+  width: 130px; height: 130px; border-radius: 50%;
+  background: linear-gradient(135deg, #e8e8f0, #f4f4f8, #d8d8e4);
+  border: 2px solid var(--silver-mid);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 44px; position: relative; z-index: 2;
+  animation: pulse 3s ease-in-out infinite;
+  box-shadow: var(--shadow-md);
+}
+@keyframes pulse { 0%,100%{box-shadow: 0 0 0 0 rgba(100,100,130,0.12), var(--shadow-md)} 50%{box-shadow: 0 0 0 22px rgba(100,100,130,0), var(--shadow-md)} }
+.void-ring { position: absolute; inset: -18px; border-radius: 50%; border: 1.5px solid rgba(120,120,160,0.12); animation: spin 18s linear infinite; }
+.void-ring-2 { position: absolute; inset: -36px; border-radius: 50%; border: 1px solid rgba(120,120,160,0.06); animation: spin 32s linear infinite reverse; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.void-title { font-family: 'Syne', sans-serif; font-size: 24px; font-weight: 700; color: var(--text); margin-bottom: 0.5rem; }
+.void-sub { color: var(--text-2); font-size: 15px; max-width: 380px; margin: 0 auto 2rem; font-weight: 300; }
+.void-status-badge {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: var(--green-dim); border: 1.5px solid #bbf7d0;
+  color: var(--green); font-size: 13px; font-weight: 500;
+  padding: 6px 16px; border-radius: var(--radius-pill); margin-bottom: 2rem;
+}
+.live-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: blink 1.5s ease infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+/* ── CONVERSATION ── */
+.match-found-banner {
+  background: linear-gradient(135deg, var(--silver-dim), #f0f0f8);
+  border: 1.5px solid var(--silver-mid);
+  border-radius: 14px; padding: 14px 18px; margin-bottom: 1.25rem;
+  display: flex; align-items: center; gap: 12px;
+}
+.match-found-text strong { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; color: var(--chrome); display: block; }
+.match-found-text span { font-size: 13px; color: var(--text-2); }
+
+.convo-wrap {
+  background: var(--bg2); border: 1px solid var(--border);
+  border-radius: 18px; padding: 1.25rem; margin-bottom: 1.25rem;
+  min-height: 280px; box-shadow: var(--shadow-sm);
+}
+.convo-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; color: var(--text-3); text-transform: uppercase; margin-bottom: 1rem; }
+.bubble { margin-bottom: 12px; animation: fadeUp 0.35s ease both; }
+.bubble-who { font-size: 11px; font-weight: 600; letter-spacing: 0.04em; margin-bottom: 4px; text-transform: uppercase; color: var(--text-3); }
+.bubble.you .bubble-who { color: var(--chrome); }
+.bubble.them .bubble-who { color: var(--teal); }
+.bubble-text {
+  background: var(--bg3); border: 1px solid var(--border);
+  border-radius: 12px; padding: 10px 14px;
+  font-size: 14px; line-height: 1.65; color: var(--text); max-width: 92%;
+}
+.bubble.you .bubble-text { background: var(--silver-dim); border-color: var(--silver-mid); border-radius: 12px 12px 4px 12px; }
+.bubble.them .bubble-text { background: var(--teal-dim); border-color: #a7f3f0; border-radius: 12px 12px 12px 4px; }
+.typing-row { display: flex; gap: 4px; padding: 8px 0; align-items: center; }
+.typing-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--text-3); animation: tdot 1.2s ease infinite; }
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+@keyframes tdot { 0%,60%,100%{transform:translateY(0);opacity:0.4} 30%{transform:translateY(-5px);opacity:1} }
+
+/* ── MATCH RESULT ── */
+.match-result { margin-top: 1.25rem; animation: fadeUp 0.4s ease both; }
+.score-row {
+  display: flex; align-items: center; gap: 1.5rem;
+  background: var(--chrome-gradient);
+  border-radius: 18px; padding: 1.5rem; margin-bottom: 1rem;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.22);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.score-big { font-family: 'Syne', sans-serif; font-size: 52px; font-weight: 800; color: #f0f0f8; line-height: 1; flex-shrink: 0; }
+.score-desc { font-size: 14px; color: rgba(240,240,248,0.75); line-height: 1.6; }
+
+.common-section {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow-sm);
+}
+.common-label { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); margin-bottom: 10px; }
+.common-tags { display: flex; flex-wrap: wrap; gap: 8px; }
+.common-tag {
+  background: var(--teal-dim);
+  border: 1.5px solid #a7f3f0;
+  color: var(--teal);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: var(--radius-pill);
+}
+
+.other-person-card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 1.1rem 1.25rem;
+  margin-bottom: 1.5rem;
+  box-shadow: var(--shadow-sm);
+}
+.other-name { font-family: 'Syne', sans-serif; font-weight: 700; font-size: 17px; color: var(--text); margin-bottom: 6px; }
+.other-bio-text { font-size: 14px; color: var(--text-2); line-height: 1.65; font-style: italic; }
+.connect-row { display: flex; gap: 10px; flex-wrap: wrap; }
+
+/* ── SAVED BADGE ── */
+.saved-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  background: var(--green-dim);
+  border: 1.5px solid #bbf7d0;
+  color: var(--green);
+  font-size: 12px;
+  font-weight: 500;
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  margin-top: 0.75rem;
+}
+
+@media (max-width: 600px) {
+  h1 { font-size: 46px; }
+  .app-content { padding: 1.5rem 1rem; }
+  .form-card { padding: 1.25rem; }
+  .score-big { font-size: 40px; }
+}
+</style>
+</head>
+<body>
+
+<!-- DEV SETUP BANNER — remove after configuring Supabase -->
+<div id="setup-banner">
+  ⚙️ <strong>Dev setup:</strong> Replace <code>YOUR_SUPABASE_URL</code> and <code>YOUR_SUPABASE_ANON_KEY</code> in the script below, then enable Google auth in your <a href="https://supabase.com/dashboard" target="_blank">Supabase dashboard</a>. <a href="#" onclick="document.getElementById('setup-banner').style.display='none'; return false;">dismiss</a>
+</div>
+
+<!-- AUTH MODAL -->
+<div class="modal-overlay" id="auth-modal" onclick="if(event.target===this)closeModal('auth-modal')">
+  <div class="modal">
+    <button onclick="closeModal('auth-modal')" style="position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:20px;color:var(--text-3);cursor:pointer;line-height:1;padding:4px 8px;border-radius:6px;" aria-label="Close">×</button>
+    <div class="modal-title">Sign in to Twin</div>
+    <p class="modal-sub">One click. Your profile is saved forever — come back anytime and your agent is waiting.</p>
+    <button class="btn-google" onclick="signInWithGoogle()">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.258h2.908c1.702-1.567 2.684-3.874 2.684-6.615z"/><path fill="#34A853" d="M9 18c2.43 0 4.467-.806 5.956-2.184l-2.908-2.258c-.806.54-1.837.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.964 10.707A5.41 5.41 0 0 1 3.682 9c0-.593.102-1.17.282-1.707V4.961H.957A8.996 8.996 0 0 0 0 9c0 1.452.348 2.827.957 4.039l3.007-2.332z"/><path fill="#EA4335" d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0A8.997 8.997 0 0 0 .957 4.961L3.964 6.293C4.672 4.166 6.656 3.58 9 3.58z"/></svg>
+      Continue with Google
+    </button>
+    <div class="modal-divider">or</div>
+    <button class="btn-ghost" style="width:100%;justify-content:center;margin-left:0;" onclick="demoBypass()">
+      Try demo without account
+    </button>
+    <p style="font-size:12px; color:var(--text-3); text-align:center; margin-top:10px; line-height:1.5;">Google login requires Supabase setup.<br>Demo mode lets you explore everything now.</p>
+  </div>
+</div>
+
+<!-- USERNAME MODAL -->
+<div class="modal-overlay" id="username-modal" onclick="if(event.target===this)closeModal('username-modal')">
+  <div class="modal" style="position:relative;">
+    <button onclick="closeModal('username-modal')" style="position:absolute;top:1rem;right:1rem;background:none;border:none;font-size:20px;color:var(--text-3);cursor:pointer;line-height:1;padding:4px 8px;border-radius:6px;" aria-label="Close">×</button>
+    <div class="modal-title">Pick your handle</div>
+    <p class="modal-sub">This is how you appear in Twin. Make it you — nobody sees your Google name unless you choose it.</p>
+    <div class="field">
+      <label>Handle</label>
+      <input type="text" id="handle-input" placeholder="e.g. deepmind, mirror, echo, ..." maxlength="30" oninput="checkHandle(this.value)" />
+      <div class="input-status" id="handle-status"></div>
+      <p class="field-note">Letters, numbers, underscores only. 3–30 characters.</p>
+    </div>
+    <button class="btn-primary" id="handle-btn" onclick="saveHandle()" style="width:100%; justify-content:center; margin-top:0.5rem;" disabled>
+      Enter Twin ↗
+    </button>
+  </div>
+</div>
+
+<!-- LANDING -->
+<div id="landing">
+  <div class="orb orb-1"></div>
+  <div class="orb orb-2"></div>
+  <div class="orb orb-3"></div>
+  <div class="landing-inner">
+    <div class="eyebrow"><span class="eyebrow-dot"></span>AI-powered connection</div>
+    <h1>Twin<span>.</span></h1>
+    <p class="tagline">Your AI agent learns who you are, then goes out and finds your people. You don't have to do anything.</p>
+    <div>
+      <button class="btn-primary" onclick="openAuth()">Build my agent</button>
+      <button class="btn-ghost" onclick="document.getElementById('how').scrollIntoView({behavior:'smooth'})">How it works</button>
+    </div>
+    <div class="how-it-works" id="how">
+      <div class="how-step"><span class="step-num">01</span><span class="step-text">Sign in with Google, pick your handle</span></div>
+      <div class="how-step"><span class="step-num">02</span><span class="step-text">Feed your agent who you really are</span></div>
+      <div class="how-step"><span class="step-num">03</span><span class="step-text">Write questions only your people would ask</span></div>
+      <div class="how-step"><span class="step-num">04</span><span class="step-text">Real matches surface. You decide to connect.</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app">
+  <div class="app-layout">
+    <div class="topbar">
+      <div class="logo">Twin</div>
+      <div class="step-indicator" id="step-dots"></div>
+      <div class="topbar-user" id="topbar-user" style="display:none;">
+        <div class="avatar" id="user-avatar"></div>
+        <span id="user-handle" class="handle-label"></span>
+        <button class="btn-signout" onclick="signOut()">sign out</button>
+      </div>
+    </div>
+    <div class="app-content">
+
+      <!-- STEP 1: IDENTITY -->
+      <div class="section active" id="sec-1">
+        <div class="section-title">Who are you, really?</div>
+        <p class="section-sub">Your agent needs to understand how your mind works — not your job title, your actual self.</p>
+        <div class="form-card">
+        <div class="field">
+          <label>Display name <span style="color:var(--text-3); font-size:11px;">(shown to matches)</span></label>
+          <input type="text" id="disp-name" placeholder="First name, nickname, whatever feels right" />
+        </div>
+        <div class="field">
+          <label>How you think — in your own words</label>
+          <textarea id="bio" placeholder="I tend to overthink everything but usually end up right. I care deeply about honesty even when it's uncomfortable. I'm obsessed with how systems fail and what that reveals..."></textarea>
+        </div>
+        </div>
+        <div class="nav-row">
+          <button class="btn-primary" onclick="goTo(2)">Next — interests ↗</button>
+        </div>
+      </div>
+
+      <!-- STEP 2: INTERESTS + VALUES + GOALS -->
+      <div class="section" id="sec-2">
+        <div class="section-title">What are you into?</div>
+        <p class="section-sub">Pick everything that resonates. Your agent uses this to find common ground.</p>
+        <div class="form-card">
+        <div class="tag-section">
+          <div class="tag-section-label">Interests</div>
+          <div class="tags" id="interests">
+            <span class="tag" onclick="toggle(this)">AI & tech</span><span class="tag" onclick="toggle(this)">Philosophy</span><span class="tag" onclick="toggle(this)">Science</span><span class="tag" onclick="toggle(this)">Music</span><span class="tag" onclick="toggle(this)">Art</span><span class="tag" onclick="toggle(this)">Writing</span><span class="tag" onclick="toggle(this)">Politics</span><span class="tag" onclick="toggle(this)">Business</span><span class="tag" onclick="toggle(this)">Psychology</span><span class="tag" onclick="toggle(this)">History</span><span class="tag" onclick="toggle(this)">Gaming</span><span class="tag" onclick="toggle(this)">Film</span><span class="tag" onclick="toggle(this)">Fitness</span><span class="tag" onclick="toggle(this)">Spirituality</span><span class="tag" onclick="toggle(this)">Economics</span><span class="tag" onclick="toggle(this)">Biology</span><span class="tag" onclick="toggle(this)">Architecture</span><span class="tag" onclick="toggle(this)">Food</span>
+          </div>
+        </div>
+        <div class="tag-section">
+          <div class="tag-section-label">Values</div>
+          <div class="tags" id="values">
+            <span class="tag" onclick="toggle(this)">Honesty above comfort</span><span class="tag" onclick="toggle(this)">Curiosity over certainty</span><span class="tag" onclick="toggle(this)">Long-term thinking</span><span class="tag" onclick="toggle(this)">Autonomy</span><span class="tag" onclick="toggle(this)">Community</span><span class="tag" onclick="toggle(this)">Depth over breadth</span><span class="tag" onclick="toggle(this)">Contrarian thinking</span><span class="tag" onclick="toggle(this)">Empathy first</span><span class="tag" onclick="toggle(this)">Systems thinking</span><span class="tag" onclick="toggle(this)">Minimalism</span><span class="tag" onclick="toggle(this)">Creativity</span><span class="tag" onclick="toggle(this)">Efficiency</span>
+          </div>
+        </div>
+        <div class="tag-section">
+          <div class="tag-section-label">Goals</div>
+          <div class="tags" id="goals">
+            <span class="tag" onclick="toggle(this)">Build something real</span><span class="tag" onclick="toggle(this)">Find deeper friendships</span><span class="tag" onclick="toggle(this)">Meet a partner</span><span class="tag" onclick="toggle(this)">Find collaborators</span><span class="tag" onclick="toggle(this)">Just interesting people</span><span class="tag" onclick="toggle(this)">Intellectual sparring</span><span class="tag" onclick="toggle(this)">Creative projects</span>
+          </div>
+        </div>
+        </div>
+        <div class="nav-row">
+          <button class="btn-ghost" onclick="goTo(1)">← Back</button>
+          <button class="btn-primary" onclick="goTo(3)">Next — your questions ↗</button>
+        </div>
+      </div>
+
+      <!-- STEP 3: CUSTOM QUESTIONS -->
+      <div class="section" id="sec-3">
+        <div class="section-title">Write your own questions</div>
+        <p class="section-sub">This is the heart of it. Add questions only someone who thinks like you would even know to ask. Your agent uses these to filter for your actual people.</p>
+        <div class="form-card">
+        <div class="field" style="margin-bottom: 8px;">
+          <label>Add a question</label>
+          <div class="custom-input-row">
+            <input type="text" id="cq-input" placeholder="e.g. Do you think free will is an illusion?" onkeydown="if(event.key==='Enter')addQ()" />
+            <button onclick="addQ()">+ Add</button>
+          </div>
+        </div>
+        <div class="custom-list" id="cq-list"></div>
+        <div class="divider"></div>
+        <div class="suggestions-label">Need inspiration? Tap to add:</div>
+        <div class="tags">
+          <span class="tag" onclick="addSugg(this)">Is consciousness fundamental?</span>
+          <span class="tag" onclick="addSugg(this)">Are you an introvert performing extroversion?</span>
+          <span class="tag" onclick="addSugg(this)">Do most people sleepwalk through life?</span>
+          <span class="tag" onclick="addSugg(this)">Is ambition overrated?</span>
+          <span class="tag" onclick="addSugg(this)">Do you think in images or words?</span>
+          <span class="tag" onclick="addSugg(this)">Is modern life making us worse?</span>
+          <span class="tag" onclick="addSugg(this)">What do you do that most people think is weird?</span>
+          <span class="tag" onclick="addSugg(this)">Do you believe in fate?</span>
+          <span class="tag" onclick="addSugg(this)">Is morality objective?</span>
+          <span class="tag" onclick="addSugg(this)">Can you ever truly know another person?</span>
+        </div>
+        </div>
+        <div class="nav-row">
+          <button class="btn-ghost" onclick="goTo(2)">← Back</button>
+          <button class="btn-primary" id="save-btn" onclick="saveAndRelease()">Save &amp; release my agent ↗</button>
+        </div>
+        <div class="saved-badge" id="saved-badge" style="display:none;">✓ Profile saved to your account</div>
+      </div>
+
+      <!-- STEP 4: TWIN -->
+      <div class="section" id="sec-4">
+        <div class="void-screen">
+          <div class="void-orb-container">
+            <div class="void-ring-2"></div>
+            <div class="void-ring"></div>
+            <div class="void-orb-core">◎</div>
+          </div>
+          <div class="void-status-badge"><div class="live-dot"></div>Agent is live</div>
+          <div class="void-title">Your agent is in Twin</div>
+          <p class="void-sub">It's out there right now, searching for minds like yours. Matches appear automatically — come back anytime.</p>
+          <button class="btn-primary" onclick="simulateMatch()">Simulate a match ↗</button>
+          <p style="font-size:12px; color:var(--text-3); margin-top:12px;">Uses live AI — about 10 seconds</p>
+        </div>
+      </div>
+
+      <!-- STEP 5: MATCH -->
+      <div class="section" id="sec-5">
+        <div class="match-found-banner">
+          <div style="font-size:24px;">◎</div>
+          <div class="match-found-text">
+            <strong>Match found in Twin</strong>
+            <span>Your agent had a conversation. Here's what happened.</span>
+          </div>
+        </div>
+        <div class="convo-wrap">
+          <div class="convo-label">The conversation</div>
+          <div id="convo-area"></div>
+          <div id="typing" style="display:none;"><div class="typing-row"><div class="typing-dot"></div><div class="typing-dot"></div><div class="typing-dot"></div></div></div>
+        </div>
+        <div id="match-result" class="match-result" style="display:none;">
+          <div class="score-row">
+            <div class="score-big" id="score-num">--</div>
+            <div class="score-desc" id="score-desc">Analyzing...</div>
+          </div>
+          <div class="common-section">
+            <div class="common-label">What you have in common</div>
+            <div class="common-tags" id="common-tags"></div>
+          </div>
+          <div class="other-person-card">
+            <div class="other-name" id="other-name">—</div>
+            <div class="other-bio-text" id="other-bio">—</div>
+          </div>
+          <div class="connect-row">
+            <button class="btn-primary" onclick="alert('In the real product this sends a connection request. Both people see the conversation their agents had.')">Connect with them</button>
+            <button class="btn-ghost" onclick="goTo(4)">Back to Twin</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────
+// SUPABASE CONFIG — replace these two values
+// Get them from: supabase.com → your project → Settings → API
+// ─────────────────────────────────────────
+const SUPABASE_URL  = 'YOUR_SUPABASE_URL';
+const SUPABASE_KEY  = 'YOUR_SUPABASE_ANON_KEY';
+// ─────────────────────────────────────────
+
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let currentUser = null;
+let currentProfile = null;
+let currentStep = 1;
+const customQs = [];
+
+const otherProfiles = [
+  { name:'Alex M.', bio:"Obsessed with how systems fail and what that reveals about who built them. I read philosophy like it's gossip. Conversations are experiments.", interests:['Philosophy','AI & tech','Writing'], values:['Honesty above comfort','Systems thinking','Depth over breadth'], qs:['Is consciousness fundamental?','Do you think most people are sleepwalking?'] },
+  { name:'Jordan K.', bio:"Builder by day, skeptic by night. If everyone agrees on something I'm probably suspicious of it. I think most 'new' problems are ancient problems in disguise.", interests:['Science','Business','History'], values:['Contrarian thinking','Long-term thinking','Autonomy'], qs:['Is ambition overrated?','Do you think in images or words?'] },
+  { name:'Sam R.', bio:"Former academic who got bored of theory. Still reads constantly. Fascinated by why smart people believe dumb things and vice versa.", interests:['History','Psychology','Writing'], values:['Curiosity over certainty','Depth over breadth','Honesty above comfort'], qs:['Is modern life making us worse?','Can you ever truly know another person?'] }
+];
+
+// ── AUTH ──
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  if(session?.user) {
+    currentUser = session.user;
+    await loadProfile();
+  }
+  sb.auth.onAuthStateChange(async (event, session) => {
+    if(event === 'SIGNED_IN' && session?.user) {
+      currentUser = session.user;
+      closeModal('auth-modal');
+      await loadProfile();
+    }
+    if(event === 'SIGNED_OUT') {
+      currentUser = null;
+      currentProfile = null;
+      showLanding();
+    }
+  });
+}
+
+async function loadProfile() {
+  const { data } = await sb.from('profiles').select('*').eq('id', currentUser.id).single();
+  currentProfile = data;
+  if(!currentProfile?.handle) {
+    openModal('username-modal');
+  } else {
+    showApp();
+    prefillForm();
+  }
+}
+
+function openAuth() { openModal('auth-modal'); }
+
+function demoBypass() {
+  currentUser = { id: 'demo', email: 'demo@twin.app', user_metadata: { avatar_url: null } };
+  currentProfile = { id: 'demo', handle: 'you' };
+  closeModal('auth-modal');
+  showApp();
+}
+
+async function signInWithGoogle() {
+  await sb.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.href }
+  });
+}
+
+async function signOut() {
+  await sb.auth.signOut();
+  showLanding();
+}
+
+// ── USERNAME ──
+let handleTimer = null;
+function checkHandle(val) {
+  clearTimeout(handleTimer);
+  const btn = document.getElementById('handle-btn');
+  const status = document.getElementById('handle-status');
+  btn.disabled = true;
+  if(!/^[a-zA-Z0-9_]{3,30}$/.test(val)) {
+    status.textContent = val.length > 0 ? 'Letters, numbers, underscores only. 3–30 chars.' : '';
+    status.className = 'input-status' + (val.length > 0 ? ' err' : '');
+    return;
+  }
+  status.textContent = 'Checking...';
+  status.className = 'input-status ok';
+  handleTimer = setTimeout(async () => {
+    const { data } = await sb.from('profiles').select('handle').eq('handle', val).single();
+    if(data) {
+      status.textContent = 'That handle is taken.';
+      status.className = 'input-status err';
+    } else {
+      status.textContent = '✓ Available';
+      status.className = 'input-status ok';
+      btn.disabled = false;
+    }
+  }, 500);
+}
+
+async function saveHandle() {
+  const handle = document.getElementById('handle-input').value.trim();
+  const btn = document.getElementById('handle-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+  const { error } = await sb.from('profiles').upsert({
+    id: currentUser.id,
+    handle,
+    email: currentUser.email,
+    avatar_url: currentUser.user_metadata?.avatar_url || null,
+    updated_at: new Date().toISOString()
+  });
+  if(error) { btn.textContent = 'Error — try again'; btn.disabled = false; return; }
+  currentProfile = { id: currentUser.id, handle };
+  closeModal('username-modal');
+  showApp();
+}
+
+// ── NAVIGATION ──
+function showLanding() {
+  document.getElementById('landing').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+function showApp() {
+  document.getElementById('landing').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  const handle = currentProfile?.handle || '';
+  const avatarUrl = currentUser?.user_metadata?.avatar_url;
+  const av = document.getElementById('user-avatar');
+  if(avatarUrl) { av.innerHTML = `<img src="${avatarUrl}" alt="" />`; }
+  else { av.textContent = handle[0]?.toUpperCase() || '?'; }
+  document.getElementById('user-handle').textContent = '@' + handle;
+  document.getElementById('topbar-user').style.display = 'flex';
+  updateDots();
+}
+
+function prefillForm() {
+  if(!currentProfile) return;
+  if(currentProfile.display_name) document.getElementById('disp-name').value = currentProfile.display_name;
+  if(currentProfile.bio) document.getElementById('bio').value = currentProfile.bio;
+  if(currentProfile.custom_questions) {
+    customQs.length = 0;
+    (currentProfile.custom_questions || []).forEach(q => customQs.push(q));
+    renderQs();
+  }
+  if(currentProfile.interests) {
+    document.querySelectorAll('#interests .tag').forEach(t => {
+      if((currentProfile.interests || []).includes(t.textContent)) t.classList.add('selected');
+    });
+  }
+  if(currentProfile.values) {
+    document.querySelectorAll('#values .tag').forEach(t => {
+      if((currentProfile.values || []).includes(t.textContent)) t.classList.add('selected');
+    });
+  }
+  if(currentProfile.goals) {
+    document.querySelectorAll('#goals .tag').forEach(t => {
+      if((currentProfile.goals || []).includes(t.textContent)) t.classList.add('selected');
+    });
+  }
+}
+
+function goTo(step) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('sec-'+step).classList.add('active');
+  currentStep = Math.min(step, 4);
+  updateDots();
+  window.scrollTo(0,0);
+}
+
+function updateDots() {
+  const dots = document.getElementById('step-dots');
+  dots.innerHTML = '';
+  for(let i=1; i<=4; i++) {
+    const d = document.createElement('div');
+    d.className = 'step-dot' + (i < currentStep ? ' done' : i === currentStep ? ' active' : '');
+    dots.appendChild(d);
+  }
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+// ── TAGS ──
+function toggle(el) { el.classList.toggle('selected'); }
+
+// ── CUSTOM QUESTIONS ──
+function addQ() {
+  const inp = document.getElementById('cq-input');
+  const val = inp.value.trim();
+  if(!val || customQs.includes(val)) return;
+  customQs.push(val);
+  renderQs();
+  inp.value = '';
+}
+function addSugg(el) {
+  const val = el.textContent.trim();
+  if(customQs.includes(val)) return;
+  customQs.push(val);
+  renderQs();
+}
+function removeQ(i) { customQs.splice(i,1); renderQs(); }
+function renderQs() {
+  document.getElementById('cq-list').innerHTML = customQs.map((q,i) =>
+    `<div class="custom-item"><span>${q}</span><button class="remove" onclick="removeQ(${i})">×</button></div>`
+  ).join('');
+}
+
+// ── SAVE PROFILE ──
+async function saveAndRelease() {
+  const btn = document.getElementById('save-btn');
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+
+  const profile = {
+    id: currentUser?.id,
+    handle: currentProfile?.handle,
+    display_name: document.getElementById('disp-name').value,
+    bio: document.getElementById('bio').value,
+    interests: [...document.querySelectorAll('#interests .tag.selected')].map(t=>t.textContent),
+    values: [...document.querySelectorAll('#values .tag.selected')].map(t=>t.textContent),
+    goals: [...document.querySelectorAll('#goals .tag.selected')].map(t=>t.textContent),
+    custom_questions: [...customQs],
+    updated_at: new Date().toISOString()
+  };
+
+  if(currentUser) {
+    await sb.from('profiles').upsert(profile);
+    document.getElementById('saved-badge').style.display = 'inline-flex';
+    setTimeout(() => { document.getElementById('saved-badge').style.display = 'none'; }, 3000);
+  }
+
+  btn.disabled = false;
+  btn.textContent = 'Save & release my agent ↗';
+  goTo(4);
+}
+
+// ── MATCH SIMULATION ──
+function getProfile() {
+  const handle = currentProfile?.handle || 'you';
+  const name = document.getElementById('disp-name').value || handle;
+  const bio = document.getElementById('bio').value || 'A curious, deep-thinking person.';
+  const interests = [...document.querySelectorAll('#interests .tag.selected')].map(t=>t.textContent);
+  const values = [...document.querySelectorAll('#values .tag.selected')].map(t=>t.textContent);
+  return { name, bio, interests, values, qs: [...customQs] };
+}
+
+async function simulateMatch() {
+  goTo(5);
+  const user = getProfile();
+  const other = otherProfiles[Math.floor(Math.random()*otherProfiles.length)];
+  document.getElementById('convo-area').innerHTML = '';
+  document.getElementById('match-result').style.display = 'none';
+  document.getElementById('typing').style.display = 'block';
+
+  const prompt = `You are simulating a conversation between two AI agents in a social matching system called Twin.
+
+Agent A represents: ${user.name}
+Bio: ${user.bio}
+Interests: ${user.interests.join(', ') || 'various'}
+Values: ${user.values.join(', ') || 'depth and honesty'}
+Custom questions: ${user.qs.join(' / ') || 'open questions'}
+
+Agent B represents: ${other.name}
+Bio: ${other.bio}
+Interests: ${other.interests.join(', ')}
+Values: ${other.values.join(', ')}
+Questions: ${other.qs.join(' / ')}
+
+Write a natural, authentic 5-6 exchange conversation between these two agents feeling each other out. Each speaks in a voice that reflects their person. Be specific and interesting — not generic.
+
+After the conversation output exactly this (no markdown, one line):
+MATCH_DATA:{"score":"83%","desc":"Strong alignment on intellectual honesty and depth.","common":["Depth over breadth","Honesty","Curiosity"],"otherName":"${other.name}","otherBio":"${other.bio}"}
+
+Format:
+[A]: text
+[B]: text`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ model:'claude-sonnet-4-20250514', max_tokens:1000, messages:[{role:'user',content:prompt}] })
+    });
+    const data = await res.json();
+    const text = data.content[0].text;
+    const [convoRaw, matchRaw] = text.split('MATCH_DATA:');
+    const lines = convoRaw.trim().split('\n').filter(l=>l.trim());
+    document.getElementById('typing').style.display = 'none';
+    for(const line of lines) { await addBubble(line, user.name, other.name); await sleep(550); }
+    let md = { score:'79%', desc:'Strong alignment found.', common:['Curiosity','Honesty','Depth'], otherName:other.name, otherBio:other.bio };
+    try { md = JSON.parse(matchRaw.trim()); } catch(e) {}
+    showResult(md);
+  } catch(e) {
+    document.getElementById('typing').style.display = 'none';
+    const fallback = [
+      `[A]: I've been thinking most people say they want honesty but what they actually want is validation with better vocabulary.`,
+      `[B]: Exactly. There's a whole industry built on that gap.`,
+      `[A]: The people who benefit from honesty are the ones who already have enough self-trust to not collapse under it.`,
+      `[B]: It's almost circular. The ones who need it most can't handle it. The ones who can were probably fine anyway.`,
+      `[A]: I use it as a filter. How someone responds when you disagree tells you everything.`,
+      `[B]: Same. Intellectual honesty is rare. I treat it like a superpower when I find it.`
+    ];
+    for(const line of fallback) { await addBubble(line, user.name, other.name); await sleep(500); }
+    showResult({ score:'84%', desc:'Strong alignment on honesty and depth. Both filter hard for realness.', common:['Honesty above comfort','Depth over breadth','Systems thinking'], otherName:other.name, otherBio:other.bio });
+  }
+}
+
+async function addBubble(line, userName, otherName) {
+  const isA = line.startsWith('[A]');
+  const text = line.replace(/^\[A\]:\s*|\[B\]:\s*/,'').trim();
+  if(!text) return;
+  const div = document.createElement('div');
+  div.className = 'bubble ' + (isA ? 'you' : 'them');
+  div.innerHTML = `<div class="bubble-who">${isA ? userName + ' — your agent' : otherName + "'s agent"}</div><div class="bubble-text">${text}</div>`;
+  document.getElementById('convo-area').appendChild(div);
+  div.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+function showResult(md) {
+  document.getElementById('score-num').textContent = md.score;
+  document.getElementById('score-desc').textContent = md.desc;
+  document.getElementById('other-name').textContent = md.otherName || 'Unknown';
+  document.getElementById('other-bio').textContent = '"' + (md.otherBio || '') + '"';
+  document.getElementById('common-tags').innerHTML = (md.common||[]).map(c=>`<span class="common-tag">${c}</span>`).join('');
+  const el = document.getElementById('match-result');
+  el.style.display = 'block';
+  setTimeout(()=>el.scrollIntoView({behavior:'smooth'}), 100);
+}
+
+// ── AMBIENT SPARKLE SYSTEM ──
+// Sparkles float off buttons and logo continuously, no interaction needed
+const SPARK_CHARS = ['✦','✧','⋆','·','✶','✸','⊹','✵','⁺'];
+const SPARK_COLORS = ['#b0b0c8','#d0d0e0','#f0f0f8','#a0a0bc','#c8c8d8','#e0e0ee','#909099'];
+
+function createSparkle(el) {
+  const rect = el.getBoundingClientRect();
+  const s = document.createElement('span');
+  s.style.cssText = [
+    'position:fixed',
+    'pointer-events:none',
+    'z-index:9999',
+    'font-style:normal',
+    'line-height:1',
+    'user-select:none',
+    `font-size:${6 + Math.random()*10}px`,
+    `color:${SPARK_COLORS[Math.floor(Math.random()*SPARK_COLORS.length)]}`,
+    `left:${rect.left + Math.random()*rect.width}px`,
+    `top:${rect.top + Math.random()*rect.height + window.scrollY}px`,
+    `--tx:${(Math.random()-0.5)*40}px`,
+    `--ty:${-(15+Math.random()*30)}px`,
+    `--tr:${(Math.random()-0.5)*60}deg`,
+    `animation: ambient-drift ${0.8+Math.random()*0.6}s ease-out forwards`,
+    `opacity:0`
+  ].join(';');
+  s.textContent = SPARK_CHARS[Math.floor(Math.random()*SPARK_CHARS.length)];
+  document.body.appendChild(s);
+  setTimeout(() => s.remove(), 1600);
+}
+
+// ambient sparkle CSS (injected so it can use CSS custom props set inline)
+const sparkCSS = document.createElement('style');
+sparkCSS.textContent = `
+@keyframes ambient-drift {
+  0%   { transform:translate(0,0) rotate(0deg) scale(0); opacity:0; }
+  18%  { opacity:1; transform:translate(calc(var(--tx)*0.2), calc(var(--ty)*0.2)) rotate(5deg) scale(1.1); }
+  80%  { opacity:0.8; }
+  100% { transform:translate(var(--tx),var(--ty)) rotate(var(--tr)) scale(0); opacity:0; }
+}`;
+document.head.appendChild(sparkCSS);
+
+const sparkleTargets = new Map(); // el -> intervalId
+
+function startAmbientSparkles(el, rate = 600) {
+  if (sparkleTargets.has(el)) return;
+  // stagger first spark randomly so not all buttons fire simultaneously
+  const offset = Math.random() * rate;
+  const id = setInterval(() => {
+    if (document.body.contains(el)) createSparkle(el);
+  }, rate);
+  setTimeout(() => {
+    if (!sparkleTargets.has(el)) return;
+    clearInterval(sparkleTargets.get(el));
+    const newId = setInterval(() => {
+      if (document.body.contains(el)) createSparkle(el);
+    }, rate);
+    sparkleTargets.set(el, newId);
+  }, offset);
+  sparkleTargets.set(el, id);
+}
+
+function initAmbientSparkles() {
+  // Primary buttons — continuous ambient sparkles
+  function attachToBtns() {
+    document.querySelectorAll('.btn-primary:not([data-sparkled])').forEach(btn => {
+      btn.dataset.sparkled = '1';
+      startAmbientSparkles(btn, 500 + Math.random()*300);
+    });
+  }
+  attachToBtns();
+  // Re-attach when sections change (new buttons appear)
+  const observer = new MutationObserver(attachToBtns);
+  observer.observe(document.body, { childList: true, subtree: true });
+
+  // Logo — slightly faster sparkle rate
+  function attachToLogo() {
+    const logo = document.querySelector('.logo');
+    if (logo && !logo.dataset.sparkled) {
+      logo.dataset.sparkled = '1';
+      startAmbientSparkles(logo, 380);
+    }
+  }
+  attachToLogo();
+  // Also burst extra sparkles on btn click
+  document.addEventListener('click', e => {
+    const btn = e.target.closest('.btn-primary');
+    if (btn && !btn.disabled) {
+      for (let i = 0; i < 6; i++) setTimeout(() => createSparkle(btn), i * 55);
+    }
+  });
+}
+
+initAmbientSparkles();
+
+</script>
+</body>
+</html>
