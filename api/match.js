@@ -1,11 +1,11 @@
-import { createClient } from '@supabase/supabase-js';
+const { createClient } = require('@supabase/supabase-js');
 
 const supabase = createClient(
   process.env.SUPABASE_URL,
   process.env.SUPABASE_SERVICE_KEY
 );
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'POST, GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -16,7 +16,6 @@ export default async function handler(req, res) {
     const body = req.body || {};
     const requestingTaskId = body.taskId;
 
-    // Get all active tasks
     const { data: tasks, error } = await supabase
       .from('tasks')
       .select('*')
@@ -35,7 +34,6 @@ export default async function handler(req, res) {
       return res.status(200).json({ message: 'Need both buyers and sellers', matched: 0 });
     }
 
-    // If a specific task was requested, only match that task
     let buyersToMatch = buyers;
     let sellersToMatch = sellers;
 
@@ -52,10 +50,8 @@ export default async function handler(req, res) {
 
     for (const buyer of buyersToMatch) {
       for (const seller of sellersToMatch) {
-        // Don't match same user
         if (buyer.user_id === seller.user_id) continue;
 
-        // Check if these specific tasks already matched
         const { data: existing } = await supabase
           .from('matches')
           .select('id')
@@ -64,18 +60,15 @@ export default async function handler(req, res) {
 
         if (existing) continue;
 
-        // Run agent conversation comparing the actual task descriptions
         const conversation = await runAgentConversation(buyer, seller);
         if (!conversation) continue;
 
-        // Score the match
         const matchResult = await scoreMatch(buyer, seller, conversation);
         if (!matchResult) continue;
 
         const scoreNum = parseInt(matchResult.score);
         if (scoreNum < 60) continue;
 
-        // Save match linked to both tasks
         await supabase.from('matches').insert({
           user_a: buyer.user_id,
           user_b: seller.user_id,
@@ -113,15 +106,14 @@ async function runAgentConversation(buyer, seller) {
         max_tokens: 600,
         messages: [{
           role: 'user',
-          content: `Two AI agents are qualifying whether a deal is possible between a buyer and seller.
+          content: `Two AI agents are qualifying whether a deal is possible.
 
 BUYER is looking for: ${buyer.agent_prompt}
-
 SELLER is offering: ${seller.agent_prompt}
 
-First determine if these are even in the same category (e.g. don't match a car buyer with a trading card seller). If they clearly don't match, write one line saying so and stop.
+First check if these are in the same category. If clearly mismatched (car buyer vs trading card seller), write one line saying so and stop.
 
-If they could match, write a 4-5 exchange qualification conversation probing price, condition, location, timeline.
+If potentially a match, write a 4-5 exchange qualification conversation probing price, condition, location, timeline.
 
 Format:
 [BUYER]: text
@@ -152,7 +144,7 @@ async function scoreMatch(buyer, seller, conversation) {
         max_tokens: 300,
         messages: [{
           role: 'user',
-          content: `Score this buyer-seller match. If they are clearly in different categories (car vs trading card etc), score it 0%.
+          content: `Score this buyer-seller match. If different categories, score 0%.
 
 Buyer: ${buyer.agent_prompt}
 Seller: ${seller.agent_prompt}
@@ -173,4 +165,3 @@ Output ONLY this JSON:
   }
 }
 
-}
