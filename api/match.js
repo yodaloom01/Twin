@@ -13,51 +13,75 @@ export default async function handler(req, res) {
   if (req.method === 'OPTIONS') return res.status(200).end();
 
   try {
-    const { data: profiles, error } = await supabase
-      .from('profiles')
+    const body = req.body || {};
+    const requestingTaskId = body.taskId;
+
+    // Get all active tasks
+    const { data: tasks, error } = await supabase
+      .from('tasks')
       .select('*')
-      .not('bio', 'is', null)
-      .not('handle', 'is', null);
+      .eq('status', 'active')
+      .not('agent_prompt', 'is', null);
 
     if (error) throw error;
-    if (!profiles || profiles.length < 2) {
-      return res.status(200).json({ message: 'Not enough users to match yet', matched: 0 });
+    if (!tasks || tasks.length < 2) {
+      return res.status(200).json({ message: 'Not enough active tasks to match', matched: 0 });
     }
 
-    const buyers = profiles.filter(p => p.values?.includes('looking'));
-    const sellers = profiles.filter(p => p.values?.includes('offering'));
+    const buyers = tasks.filter(t => t.intent === 'looking');
+    const sellers = tasks.filter(t => t.intent === 'offering');
 
     if (!buyers.length || !sellers.length) {
       return res.status(200).json({ message: 'Need both buyers and sellers', matched: 0 });
     }
 
+    // If a specific task was requested, only match that task
+    let buyersToMatch = buyers;
+    let sellersToMatch = sellers;
+
+    if (requestingTaskId) {
+      const requestingTask = tasks.find(t => t.id === requestingTaskId);
+      if (requestingTask?.intent === 'looking') {
+        buyersToMatch = [requestingTask];
+      } else if (requestingTask?.intent === 'offering') {
+        sellersToMatch = [requestingTask];
+      }
+    }
+
     let matchCount = 0;
 
-    for (const buyer of buyers) {
-      for (const seller of sellers) {
-        if (buyer.id === seller.id) continue;
+    for (const buyer of buyersToMatch) {
+      for (const seller of sellersToMatch) {
+        // Don't match same user
+        if (buyer.user_id === seller.user_id) continue;
 
+        // Check if these specific tasks already matched
         const { data: existing } = await supabase
           .from('matches')
           .select('id')
-          .or(`and(user_a.eq.${buyer.id},user_b.eq.${seller.id}),and(user_a.eq.${seller.id},user_b.eq.${buyer.id})`)
+          .or(`and(task_a.eq.${buyer.id},task_b.eq.${seller.id}),and(task_a.eq.${seller.id},task_b.eq.${buyer.id})`)
           .single();
 
         if (existing) continue;
 
+        // Run agent conversation comparing the actual task descriptions
         const conversation = await runAgentConversation(buyer, seller);
         if (!conversation) continue;
 
+        // Score the match
         const matchResult = await scoreMatch(buyer, seller, conversation);
         if (!matchResult) continue;
 
         const scoreNum = parseInt(matchResult.score);
         if (scoreNum < 60) continue;
 
+        // Save match linked to both tasks
         await supabase.from('matches').insert({
-          user_a: buyer.id,
-          user_b: seller.id,
-          conversation: conversation,
+          user_a: buyer.user_id,
+          user_b: seller.user_id,
+          task_a: buyer.id,
+          task_b: seller.id,
+          conversation,
           score: matchResult.score,
           summary: matchResult.summary,
           common_ground: matchResult.common
@@ -67,7 +91,7 @@ export default async function handler(req, res) {
       }
     }
 
-    return res.status(200).json({ message: `Matched ${matchCount} pairs`, matched: matchCount });
+    return res.status(200).json({ message: `Found ${matchCount} new match${matchCount !== 1 ? 'es' : ''}`, matched: matchCount });
 
   } catch (err) {
     console.error('Match engine error:', err);
@@ -86,20 +110,20 @@ async function runAgentConversation(buyer, seller) {
       },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
-        max_tokens: 800,
+        max_tokens: 600,
         messages: [{
           role: 'user',
-          content: `You are simulating a conversation between two AI agents in a marketplace. One represents a buyer, one a seller. They are qualifying whether there is a deal to be made.
+          content: `Two AI agents are qualifying whether a deal is possible between a buyer and seller.
 
-Buyer agent (representing ${buyer.display_name || buyer.handle}):
-${buyer.bio}
+BUYER is looking for: ${buyer.agent_prompt}
 
-Seller agent (representing ${seller.display_name || seller.handle}):
-${seller.bio}
+SELLER is offering: ${seller.agent_prompt}
 
-Write a 4-5 exchange conversation where the agents probe for fit — price, timeline, location, requirements. Be realistic and specific. If the deal obviously doesn't work, show the agents figuring that out quickly.
+First determine if these are even in the same category (e.g. don't match a car buyer with a trading card seller). If they clearly don't match, write one line saying so and stop.
 
-Format each line as:
+If they could match, write a 4-5 exchange qualification conversation probing price, condition, location, timeline.
+
+Format:
 [BUYER]: text
 [SELLER]: text`
         }]
@@ -128,23 +152,25 @@ async function scoreMatch(buyer, seller, conversation) {
         max_tokens: 300,
         messages: [{
           role: 'user',
-          content: `Based on this agent conversation between a buyer and seller, score the match and summarize.
+          content: `Score this buyer-seller match. If they are clearly in different categories (car vs trading card etc), score it 0%.
 
-Buyer: ${buyer.bio}
-Seller: ${seller.bio}
+Buyer: ${buyer.agent_prompt}
+Seller: ${seller.agent_prompt}
 Conversation: ${conversation}
 
-Output ONLY this JSON, nothing else:
+Output ONLY this JSON:
 {"score":"75%","summary":"Good alignment on price and location.","common":["Price range matches","Same location","Timeline works"]}`
         }]
       })
     });
 
     const data = await response.json();
-    const text = data.content?.[0]?.text || '{}';
+    const text = data.content?.[0]?.text || '{"score":"0%","summary":"No match","common":[]}';
     return JSON.parse(text.trim());
   } catch (e) {
     console.error('Score error:', e);
     return null;
   }
+}
+
 }
